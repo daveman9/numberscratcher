@@ -10,7 +10,7 @@ SUBPATHS  = .
 #The Objects that are compiled
 OBJS      = $(BASEOBS)
 
-BASEOBS   = main.o
+BASEOBS   = main.o Screen.o Field.o
 
 
 OPROG = $(addprefix $(ODIR)/, $(PROG))

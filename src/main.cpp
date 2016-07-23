@@ -1,5 +1,5 @@
 #include <iostream>
-#include <ncurses.h>
+#include "Game.h"
 
 using namespace std;
 
@@ -69,5 +69,8 @@ int main(int argc, char** argv)
 			}
 		}
 	}
+	if (loadfilename.empty())
+		loadfilename = "/home/felix/programming/cpp/numberscratcher/fields/1";
+	Game::startGame(loadfilename,"");
 	return 0;
 }

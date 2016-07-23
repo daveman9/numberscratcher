@@ -2,7 +2,7 @@
 #include <fstream>
 #include <iostream>
 
-Field::Field(std::string filename)
+Field::Field(std::string& filename)
 {
 	std::ifstream filein(filename);
 	if( !filein.is_open() )
@@ -14,7 +14,7 @@ Field::Field(std::string filename)
 	height=y;
 	width=x;
 	count=x*y;
-	std::cout<<x << std::endl << y << std::endl;
+	//std::cout<<x << std::endl << y << std::endl;
 	numbers = new short* [y];
 	short n;
 	filein.get();
@@ -25,11 +25,12 @@ Field::Field(std::string filename)
 		for(x=0; x<width; ++x)
 		{
 			n = filein.get() - '0';
-			std::cout << n;
+		//	std::cout << n;
 			numbers[y][x] = n;
 		}
 	}
-	std::cout << std::endl;
+	filein.close();
+//	std::cout << std::endl;
 }
 
 Field::~Field()
@@ -41,7 +42,6 @@ Field::~Field()
 
 void Field::deal()
 {
-	compact();
 	reservedheight = 2* height;
 	short ** newnums = new short * [reservedheight];
 	int endx=width-1;
@@ -76,27 +76,36 @@ void Field::deal()
 	}
 	//Write the numbers
 	int x,y;
+	short n;
 	for(y=0; y<endy; ++y)
 	{
 		for(x=0; x<width; ++x)
 		{
-			newnums[wy][wx] = numbers[y][x];
+			n = numbers[y][x];
+			if(n != 0)
+			{
+				newnums[wy][wx] = n;
+				if(++wx == width)
+				{
+					wx = 0;
+					++wy;
+					++height;
+				}
+			}
+		}
+	}
+	for(x=0;x<endx;++x)
+	{
+		n = numbers[endy][x];
+		if (n != 0)
+		{
+			newnums[wy][wx]=n;
 			if(++wx == width)
 			{
 				wx = 0;
 				++wy;
 				++height;
 			}
-		}
-	}
-	for(x=0;x<endx;++x)
-	{
-		newnums[wy][wx] = numbers[y][x];
-		if(++wx == width)
-		{
-			wx = 0;
-			++wy;
-			++height;
 		}
 	}
 	delete[] numbers;
@@ -161,22 +170,25 @@ void Field::compact(int y1, int y2)
 	}
 }
 
-void Field::remove(int x1, int y1, int x2, int y2)
+bool Field::remove(int x1, int y1, int x2, int y2)
 {
 	if (x1<0 || x2<0 || y1<0 || y2<0 || x1>= width || y1>=height || x2>=width || y2>=height ||
 	   (x1==x2 && y1==y2) || numbers[y1][x1]==0 || numbers[y2][x2]==0 ||
-	   !(numbers[y1][x1]==numbers[y2][x2] || numbers[y1][x1]+numbers[y2][x2]!=10) )
-		return;
+	   !(numbers[y1][x1]==numbers[y2][x2] || numbers[y1][x1]+numbers[y2][x2]==10) )
+		return false;
 	int x,y;
 	//Random lambda
 	auto deldel = [&](){
-		if(x==y2 && y==y2)
+		if(x==x2 && y==y2)
 		{
 			numbers[y1][x1] = 0;
 			numbers[y2][x2] = 0;
 			compact(y1,y2);
 			count -= 2;
+			return true;
 		}
+		else
+			return false;
 	};
 
 	//check for same row to the left
@@ -188,8 +200,11 @@ void Field::remove(int x1, int y1, int x2, int y2)
 			x=width-1;
 			--y;
 		}
-	}while(y>0 && numbers[y][x]==0);
-	deldel();
+	}while(y>=0 && numbers[y][x]==0);
+	if(y<0)
+		++y;
+	if(deldel())
+		return true;
 
 	//check for same row to the right
 	x = x1;
@@ -200,23 +215,33 @@ void Field::remove(int x1, int y1, int x2, int y2)
 			x = 0;
 			++y;
 		}
-	}while(y<height-1 && numbers[y][x]==0);
-	deldel();
+	}while(y<height && numbers[y][x]==0);
+	if(y==height)
+		--y;
+	if(deldel())
+		return true;
 
 	//check for the same column on top
 	x = x1;
 	y = y1;
 	do
 		--y;
-	while(y>0 && numbers[y][x] ==0 );
-	deldel();
+	while(y>=0 && numbers[y][x] ==0 );
+	if(y<0)
+		++y;
+	if(deldel())
+		return true;
 
 	//check for the same column on bottom
 	y = y1;
 	do
 		++y;
-	while(y<height-1 && numbers[y][x]==0);
-	deldel();
+	while(y<height && numbers[y][x]==0);
+	if(y==height)
+		--y;
+	if(deldel())
+		return true;
+	return false;
 }
 
 int Field::getHeight()
@@ -239,4 +264,16 @@ int Field::getNumberAt(int x, int y)
 int Field::getCount()
 {
 	return count;
+}
+
+void Field::writeField(std::string& filename)
+{
+	std::ofstream outfile(filename);
+	if(!outfile.is_open())
+		throw -5;
+	outfile<<width<<" "<<height<<" ";
+	for(int x,y=0;y<height;++y)
+		for(x=0;x<height;++x)
+			outfile.put(numbers[y][x]+'0');
+	outfile.close();
 }

@@ -1,6 +1,6 @@
 #include "Game.h"
 #include "Field.hpp"
-#include <ncurses.h>
+#include <curses.h>
 #include <iostream>
 
 namespace Game
@@ -9,6 +9,7 @@ namespace Game
 void startGame(std::string inputfile, std::string outputfile)
 {
 	//initialization
+	Field f(inputfile);
 	initscr();
 	cbreak();
 	noecho();
@@ -25,7 +26,6 @@ void startGame(std::string inputfile, std::string outputfile)
 	//Selection color
 	init_pair(3,COLOR_RED,COLOR_BLACK);
 
-	Field f(inputfile);
 
 	int width = f.getWidth();
 	int height= f.getHeight();
@@ -35,6 +35,22 @@ void startGame(std::string inputfile, std::string outputfile)
 	bool secondselected=false;
 	int selx1,selx2,sely1,sely2;
 	bool gamerunning=true;
+	bool movepossible,showmovehint=false;
+	bool showmove = false;
+	std::string movehint;
+	int hintx1,hinty1,hintx2,hinty2;
+
+	auto printhelp = [&](){
+		clear();
+		mvprintw(0,0,"Move using the mouse or the arrow keys");
+		mvprintw(1,0,"d: Deal more Numbers");
+		mvprintw(2,0,"r: reset selection.");
+		mvprintw(3,0,"q: Quit the game ");
+		mvprintw(4,0,"s,e: Select the number under the Cursor");
+		mvprintw(5,0,"m: check whether a move is possible.");
+		mvprintw(6,0,"Press any Key to resume");
+		getch();
+	};
 
 	auto printNumbers = [&](){
 		clear();
@@ -60,11 +76,21 @@ void startGame(std::string inputfile, std::string outputfile)
 				addch(' ');
 			}
 		}
-		mvprintw(y,0,"Move using the mouse or the arrow keys");
-		mvprintw(y+1,0,"d: Deal more Numbers");
-		mvprintw(y+2,0,"r: reset selection.");
-		mvprintw(y+3,0,"q: Quit the game ");
-		mvprintw(y+4,0,"s,e: Select the number under the Cursor");
+		mvprintw(y,0,"press h for help");
+		if(showmovehint)
+		{
+			if(movepossible)
+			{
+				mvprintw(y+1,0,"Another move is possible");
+				if(showmove)
+				{
+					mvprintw(y+2,0, movehint.c_str());
+				}
+			}
+			else
+				mvprintw(y+1,0,"No further move is possible");
+		}
+		
 	};
 
 	auto selectAction = [&](){
@@ -81,6 +107,7 @@ void startGame(std::string inputfile, std::string outputfile)
 			{
 				if(f.remove(selx1,sely1,xpos,ypos))
 				{
+					showmovehint=false;
 					int newheight=f.getHeight();
 					if(newheight<height && ypos==height-1)
 						--ypos;
@@ -141,6 +168,8 @@ void startGame(std::string inputfile, std::string outputfile)
 		}
 	};
 
+	printhelp();
+
 	int c;
 	while (gamerunning)
 	{
@@ -149,6 +178,35 @@ void startGame(std::string inputfile, std::string outputfile)
 		c=getch();
 		switch(c)
 		{
+			case 'h':
+				printhelp();
+				break;
+			case 'm':
+				if(showmovehint && movepossible)
+				{
+					if(showmove)
+					{
+						firstselected=false;
+						xpos = hintx1;
+						ypos = hinty1;
+						selectAction();
+						xpos = hintx2;
+						ypos = hinty2;
+						selectAction();
+					}
+					else{
+						f.generatemove(hintx1,hinty1,hintx2,hinty2);
+						movehint = "The move is: "+std::to_string(hintx1+1)+","+std::to_string(hinty1+1)+" "+std::to_string(hintx2+1)+","+std::to_string(hinty2+1);
+						showmove = true;
+					}
+				}
+				else
+				{
+					showmove = false;
+					movepossible=f.checkformove();
+					showmovehint=true;
+				}
+				break;
 			case 'q':
 				gamerunning=false;
 				break;
@@ -169,15 +227,24 @@ void startGame(std::string inputfile, std::string outputfile)
 				moveAction(1);
 				break;
 			case 'r':
+				xpos = 0;
+				ypos = 0;
+				moveAction(0);
 				firstselected=false;
 				break;
 			case 'd':
+				if(f.checkformove()==true)
+				{
+					clear();
+					mvprintw(0,0,"Another move is possible.");
+					mvprintw(1,0,"press d to deal");
+					mvprintw(2,0,"Any other Key aborts");
+					c = getch();
+					if(c != 'd')
+						break;
+				}
+				showmovehint=false;
 				f.deal();
-				width=f.getWidth();
-				height=f.getHeight();
-				break;
-			case 'c':
-				f.compact();
 				width=f.getWidth();
 				height=f.getHeight();
 				break;
@@ -205,6 +272,8 @@ void startGame(std::string inputfile, std::string outputfile)
 	}
 	curs_set(1);
 	endwin();
+	if(!outputfile.empty())
+		f.writeField(outputfile);
 }
 
 }

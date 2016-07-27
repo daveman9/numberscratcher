@@ -3,9 +3,9 @@
 PROG      = numberscratcher
 VPATH     = src include
 ODIR      = ./bin
-SHAREFLAGS= -g -O2
+SHAREFLAGS= -g
 CFLAGS    = $(SHAREFLAGS) -std=c++11 -Wall
-LINKFLAGS = $(SHAREFLAGS) -lpthread -lncurses
+LINKFLAGS = $(SHAREFLAGS) -lncurses
 COMPILER  = g++
 
 #Name of subpaths inside Odir (Must be the same in ./include and ./src as well)
@@ -20,7 +20,7 @@ BASEOBS   = main.o Field.o Game.o
 OPROG = $(addprefix $(ODIR)/, $(PROG))
 
 run : all
-	$(OPROG) 2> outfifo
+	$(OPROG)
 
 all : buildbin $(OPROG)
 

@@ -20,7 +20,6 @@ void printhelp(bool errorhelp)
 	<<"-s  [file] saves the gamestate in [file] on exit"		<<endl
 	<<"-l  [file] loads the gamestate in [file]"				<<endl
 	<<"-ls [file] combination of the two commands above"		<<endl
-	<<"-c  [file] load a custom playing field"					<<endl
 																<<endl;
 	exit(0);
 }
@@ -52,12 +51,6 @@ int main(int argc, char** argv)
 					else
 						printhelp(true);
 					break;
-				case 'c':
-					if(++i < argc && argv[i][0]!='-')
-						loadfilename = argv[i];
-					else
-						printhelp(true);
-					break;
 				case 'l':
 					if(++i < argc && argv[i][0]!='-')
 						loadfilename = argv[i];
@@ -70,7 +63,11 @@ int main(int argc, char** argv)
 		}
 	}
 	if (loadfilename.empty())
-		loadfilename = "/home/felix/programming/cpp/numberscratcher/fields/1";
-	Game::startGame(loadfilename,"");
+	{
+		loadfilename = "fields/";
+		loadfilename += (presetgame+'0');
+	}
+	std::cout<<"Loading File: "<<loadfilename<<std::endl;
+	Game::startGame(loadfilename,savefilename);
 	return 0;
 }

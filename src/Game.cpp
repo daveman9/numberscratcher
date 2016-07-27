@@ -61,6 +61,7 @@ void startGame(std::string inputfile, std::string outputfile)
 			move(y,0);
 			for(x=0;x<width;++x)
 			{
+				color_set(1,0);
 				if(xpos==x && ypos==y)
 					color_set(2,0);
 				if( (firstselected && selx1==x && sely1==y) || (secondselected && selx2==x && sely2==y))

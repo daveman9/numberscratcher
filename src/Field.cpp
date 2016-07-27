@@ -47,14 +47,14 @@ Field::~Field()
 
 void Field::deal()
 {
-	int newheight = height + 1 + (count / width);
-	char ** newnums = new char* [newheight];
+	int newheight = height + (count / width) + ((count % width == 0)? 0 : 1);
+	char ** newnums = new char* [newheight+1];
 
 	//move the old numbers over
 	for(int i=0; i<height; ++i)
 		newnums[i] = numbers[i];
 
-	for(int i=height;i<newheight;++i)
+	for(int i=height;i<=newheight;++i)
 		newnums[i] = new char[width];
 
 	//find the correct position
@@ -92,6 +92,7 @@ void Field::deal()
 	}
 
 	//setting the new numbers
+	count *= 2;
 	height = newheight;
 	delete[] numbers;
 	numbers = newnums;

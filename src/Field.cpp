@@ -12,17 +12,17 @@ Field::Field(std::string& filename)
 	filein >> height;
 
 	count=0;
-	numbers = new char* [height];
+	numbers = new int* [height];
 
 	//Skip seperator betwenn numbers and Metadata
 	filein.get();
 
 	//Reserve Space in the rows
 	for (int i=0;i<height;++i)
-		numbers[i]=new char [width];
+		numbers[i]=new int [width];
 
 	//Fill the field with the numbers read from the file
-	char n;
+	int n;
 	for ( int x,y=0; y<height; ++y)
 	{
 		for(x=0; x<width; ++x)
@@ -47,42 +47,42 @@ Field::~Field()
 
 void Field::deal()
 {
-	int newheight = height + (count / width) + ((count % width == 0)? 0 : 1);
-	char ** newnums = new char* [newheight+1];
+	int newheight = 2* height;
+	int** newnums = new int* [newheight];
+	for(int a = 0; a < newheight; ++a)
+	{
+		newnums[a] = new int[width];
+		for(char b = 0; b < width ; ++b )
+			newnums[a][b] = 0;
+	}
 
-	//move the old numbers over
-	for(int i=0; i<height; ++i)
-		newnums[i] = numbers[i];
+	int wy = height-1;
+	int wx = width-1;
 
-	for(int i=height;i<=newheight;++i)
-		newnums[i] = new char[width];
-
-	//find the correct position
-	int wx=width-1;
-	int wy=height-1;
-	while(numbers[wy][wx]==0)
+	while(wx > 0 && numbers[wy][wx] == 0)
 		--wx;
+	++wx;
 
-	if(++wx==width)
+	int sx = wx;
+
+	if(wx == width)
 	{
 		wx = 0;
 		++wy;
 	}
 
-	//delimiters
-	int ry=wy;
-	int rx=wx;
-
-
-	//copying loop
-	for(int x,y=0;y<=ry;++y)
+	//move the numbers over
+	int oldnumber;
+	for(int x,y = 0; y < height; ++y)
 	{
-		for(x=0;(y<ry && x<width) || (y==ry && x<rx); ++x)
+		for(x = 0; (y < (height-1) && x < width ) || x < sx; ++x)
 		{
-			if(numbers[y][x] != 0)
+			oldnumber = numbers[y][x];
+			newnums[y][x] = oldnumber;
+			if( oldnumber != 0 )
 			{
-				newnums[wy][wx] = numbers[y][x];
-				if(++wx==width)
+				newnums[wy][wx] = oldnumber;
+				if(++wx == width)
 				{
 					wx = 0;
 					++wy;
@@ -91,12 +91,19 @@ void Field::deal()
 		}
 	}
 
-	//setting the new numbers
-	count *= 2;
-	height = newheight;
+	for(int y = 0; y < height; ++y)
+		delete[] numbers[y];
 	delete[] numbers;
-	numbers = newnums;
 
+	if(wx == 0)
+		--wy;
+
+	height = wy+1;
+	numbers = newnums;
+	count *= 2;
+
+	for(int y = height; y < newheight; ++y)
+		delete[] newnums[y];
 }
 
 void Field::compact(int y1, int y2)
@@ -160,7 +167,7 @@ bool Field::remove(int x1, int y1, int x2, int y2)
 	//Check wether the Fields border each other
 	// i iterates through the directions
 	int x,y;
-	for(char i=0;i<4;++i)
+	for(int i=0;i<4;++i)
 	{
 		next(i,x1,y1,x,y);
 
@@ -185,7 +192,7 @@ bool Field::checkformove(){
 
 void Field::generatemove(int& mx1,int & my1, int& mx2, int& my2)
 {
-	char s;
+	int s;
 	for(int tx,ty,x,y=0;y<height;++y)
 	{
 		for (x=0;x<width;++x)

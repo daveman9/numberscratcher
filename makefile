@@ -3,7 +3,7 @@
 PROG      = numberscratcher
 VPATH     = src include
 ODIR      = ./bin
-SHAREFLAGS= -g
+SHAREFLAGS= -g -pipe
 CFLAGS    = $(SHAREFLAGS) -std=c++11 -Wall
 LINKFLAGS = $(SHAREFLAGS) -lncurses
 COMPILER  = g++
@@ -32,7 +32,7 @@ clean:
 
 #linking
 $(OPROG): $(addprefix $(ODIR)/, $(OBJS))
-	$(COMPILER) $(LINKFLAGS) -o $@ $^
+	$(COMPILER) -o $@ $^ $(LINKFLAGS)
 
 #compiling
 $(ODIR)/%.o : %.cpp

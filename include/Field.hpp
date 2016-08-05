@@ -49,5 +49,5 @@ private:
 	int count;
 	//First parameter: y
 	//secomd parameter: x
-	char ** numbers;
+	int ** numbers;
 };

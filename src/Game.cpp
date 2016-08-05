@@ -27,10 +27,9 @@ void startGame(std::string inputfile, std::string outputfile)
 	init_pair(3,COLOR_RED,COLOR_BLACK);
 
 
-	int width = f.getWidth();
-	int height= f.getHeight();
 	int xpos=0;
 	int ypos=0;
+	int width,height;
 	bool firstselected=false;
 	bool secondselected=false;
 	int selx1,selx2,sely1,sely2;
@@ -56,6 +55,8 @@ void startGame(std::string inputfile, std::string outputfile)
 		clear();
 		short n;
 		int x,y;
+		width = f.getWidth();
+		height= f.getHeight();
 		for(y=0;y<height;++y)
 		{
 			move(y,0);
@@ -109,14 +110,12 @@ void startGame(std::string inputfile, std::string outputfile)
 				if(f.remove(selx1,sely1,xpos,ypos))
 				{
 					showmovehint=false;
-					int newheight=f.getHeight();
-					if(newheight<height && ypos==height-1)
+					if(f.getHeight() == ypos)
 						--ypos;
-					height=newheight;
 					firstselected=false;
 					if(f.getCount()==0)
 					{
-						std::cout<<"You won!";
+						std::cout<<"You won!"<<std::endl;
 						gamerunning=false;
 					}
 				}
@@ -245,7 +244,9 @@ void startGame(std::string inputfile, std::string outputfile)
 						break;
 				}
 				showmovehint=false;
+				endwin();
 				f.deal();
+				initscr();
 				width=f.getWidth();
 				height=f.getHeight();
 				break;

@@ -1,6 +1,6 @@
 #The program Name (Name of the resulting executable)
 
-PROG      = numberscratcher
+PROG      = tenpair
 VPATH     = src include
 ODIR      = ./bin
 SHAREFLAGS= -g -pipe

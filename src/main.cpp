@@ -7,7 +7,10 @@ void printhelp(bool errorhelp)
 {
 	cout<<endl;
 	if(!errorhelp)
-		cout<<"A Game based on ncurses. Play by clicking the tiles with the mouse"<<endl<<endl;
+	{
+		cout<<"A Game based on ncurses. Play by clicking the tiles with the mouse"<<endl;
+		cout<<"Further instructions by pressing 'h' inside the game"<<endl<<endl;
+	}
 
 	cout
 	<<"Usage: "													<<endl
@@ -27,7 +30,6 @@ void printhelp(bool errorhelp)
 int main(int argc, char** argv)
 {
 	int presetgame=1;
-	bool loadgamestate = false;
 	string loadfilename;
 	string savefilename;
 	for(int i=0;i<argc;++i)

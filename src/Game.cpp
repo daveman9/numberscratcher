@@ -27,39 +27,64 @@ void startGame(std::string inputfile, std::string outputfile)
 	init_pair(3,COLOR_RED,COLOR_BLACK);
 
 
+	//Cursor position - In number Coordinates.
 	int xpos=0;
 	int ypos=0;
+	//Dimensions of the numbers!
 	int width,height;
+
+	//Selection Status and position
 	bool firstselected=false;
 	bool secondselected=false;
 	int selx1,selx2,sely1,sely2;
+
+	//General Status Variables
 	bool gamerunning=true;
 	bool movepossible,showmovehint=false;
 	bool showmove = false;
+
+	//the hint
 	std::string movehint;
 	int hintx1,hinty1,hintx2,hinty2;
+
+	//the current view status
+	int viewOffset = 0;
+	int viewheight;
+	//Never used but needed for getmaxyx()
+	int screenwidth;
+
+	//if the bool is false returns the number coordinate
+	auto translateview = [&](bool toScreenCoordinates, int y){
+		if(toScreenCoordinates)
+			return ( y - viewOffset);
+		else
+			return ( y + viewOffset);
+	};
 
 	auto printhelp = [&](){
 		clear();
 		mvprintw(0,0,"Move using the mouse or the arrow keys");
-		mvprintw(1,0,"d: Deal more Numbers");
-		mvprintw(2,0,"r: reset selection.");
-		mvprintw(3,0,"q: Quit the game ");
-		mvprintw(4,0,"s,e: Select the number under the Cursor");
-		mvprintw(5,0,"m: check whether a move is possible.");
-		mvprintw(6,0,"Press any Key to resume");
+		mvprintw(1,0,"d         : Deal more Numbers");
+		mvprintw(2,0,"r         : Reset selection.");
+		mvprintw(3,0,"q         : Quit the game ");
+		mvprintw(4,0,"s,e,Enter : Select the number under the Cursor");
+		mvprintw(5,0,"m         : check whether a move is possible.");
+		mvprintw(6,0,"Page Down : Scroll screen down by 5 lines");
+		mvprintw(7,0,"Page Up   : Scroll screen up by 5 lines");
+		mvprintw(9,0,"Press any Key to resume");
 		getch();
 	};
 
 	auto printNumbers = [&](){
+		getmaxyx(stdscr, viewheight, screenwidth);
 		clear();
 		short n;
 		int x,y;
 		width = f.getWidth();
 		height= f.getHeight();
-		for(y=0;y<height;++y)
+		for(y=translateview(false,0);y<height && y < translateview(false,viewheight-3);++y)
 		{
-			move(y,0);
+			move( translateview(true,y), 0);
 			for(x=0;x<width;++x)
 			{
 				color_set(1,0);
@@ -77,7 +102,12 @@ void startGame(std::string inputfile, std::string outputfile)
 				color_set(1,0);
 				addch(' ');
 			}
+			/* Prints the line number to the right side
+			printw("     ");
+			printw(std::to_string(y).c_str());
+			*/
 		}
+		y = translateview(true,y);
 		mvprintw(y,0,"press h for help");
 		if(showmovehint)
 		{
@@ -92,7 +122,6 @@ void startGame(std::string inputfile, std::string outputfile)
 			else
 				mvprintw(y+1,0,"No further move is possible");
 		}
-		
 	};
 
 	auto selectAction = [&](){
@@ -115,7 +144,10 @@ void startGame(std::string inputfile, std::string outputfile)
 					firstselected=false;
 					if(f.getCount()==0)
 					{
-						std::cout<<"You won!"<<std::endl;
+						clear();
+						mvprintw(0,0,"You won!");
+						mvprintw(2,0,"Press any key to end");
+						getch();
 						gamerunning=false;
 					}
 				}
@@ -165,6 +197,31 @@ void startGame(std::string inputfile, std::string outputfile)
 		{
 			xpos=newx;
 			ypos=newy;
+			if(ypos < viewOffset)
+				viewOffset = ypos;
+			if(ypos > translateview(false,viewheight-4))
+				++viewOffset;
+		}
+	};
+
+	//if up is false scrolls down
+	auto scrollaction = [&](bool up){
+		if(up)
+		{
+			viewOffset -= 5;
+			if (viewOffset < 0)
+				viewOffset = 0;
+			if ( ypos > (viewOffset + viewheight - 4) )
+				ypos = viewOffset + viewheight - 4;
+		}
+		else if( height > (viewheight -3) )
+		{
+			viewOffset += 5;
+			int maxoffset = height - (viewheight - 3);
+			if( maxoffset > 0 && viewOffset > maxoffset)
+				viewOffset = maxoffset;
+			if( translateview(true,ypos) < 0)
+				ypos = translateview(false,0);
 		}
 	};
 
@@ -178,6 +235,9 @@ void startGame(std::string inputfile, std::string outputfile)
 		c=getch();
 		switch(c)
 		{
+			case 'z':
+				++viewOffset;
+				break;
 			case 'h':
 				printhelp();
 				break;
@@ -226,6 +286,12 @@ void startGame(std::string inputfile, std::string outputfile)
 			case KEY_DOWN:
 				moveAction(1);
 				break;
+			case KEY_PPAGE:
+				scrollaction(true);
+				break;
+			case KEY_NPAGE:
+				scrollaction(false);
+				break;
 			case 'r':
 				xpos = 0;
 				ypos = 0;
@@ -256,18 +322,23 @@ void startGame(std::string inputfile, std::string outputfile)
 					if(event.bstate & BUTTON1_CLICKED)
 					{
 						int mx = event.x/2;
-						int my = event.y;
+						int my = translateview(false, event.y);
 						if(mx>=0 && my >=0 && mx<(2*width-1) && my<height)
 						{
 							xpos = event.x/2;
-							ypos = event.y;
+							ypos = my;
 							selectAction();
 						}
 					}
+					if(event.bstate & BUTTON4_PRESSED)
+						scrollaction(true);
+					if(event.bstate & BUTTON5_PRESSED)
+						scrollaction(false);
 				}
 				break;
 			case 's':
 			case 'e':
+			case 10:
 			case KEY_ENTER:
 				selectAction();
 		}
